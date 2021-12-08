@@ -1,4 +1,4 @@
-# autokueng-api
+# Autoküng API
 The autokueng.ch website api
 
 ## PostgreSQL
