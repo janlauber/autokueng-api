@@ -34,6 +34,7 @@ func initDB() {
 	}
 
 	database.DBConn.Debug().AutoMigrate(&models.User{})
+	database.DBConn.Debug().AutoMigrate(&models.News{})
 
 	log.Printf("Successfully connected to database %s\n", dbName)
 }
