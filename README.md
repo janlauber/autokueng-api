@@ -1,5 +1,7 @@
 # Autoküng API
 The autokueng.ch website api
+- [frontend](https://github.com/janlauber/autokueng-frontend)
+- [data api](https://github.com/janlauber/autokueng-data)
 
 ## PostgreSQL
 Run Test PostgreSQL docker instance:
@@ -7,18 +9,19 @@ Run Test PostgreSQL docker instance:
 docker run -it -p 5432:5432 -d -e POSTGRES_HOST_AUTH_METHOD=trust postgres
 ```
 ### Env Variables
-Set the following env variables:
+Set the following env variables:  
+*database*
 ```bash
 export DB_USERNAME=postgres
-```
-```bash
 export DB_PASSWORD=
-```
-```bash
 export DB_NAME=postgres
-```
-```bash
 export DB_HOST=localhost
+```
+*jwt secret*
+```bash
+# must be the same as in autokueng data api
+export JWT_SECRET_KEY=<secret>
+export UPLOAD_SECRET=<secret>
 ```
 
 ## API Reference

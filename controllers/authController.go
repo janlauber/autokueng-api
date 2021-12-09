@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -10,19 +9,20 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/janlauber/autokueng-api/database"
 	"github.com/janlauber/autokueng-api/models"
-	"github.com/janlauber/autokueng-api/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var SecretKey string
+var UploadSecret string
 
 func SetSecretKey(c *fiber.Ctx) {
-	SecretKey = os.Getenv("SECRET_KEY")
+	SecretKey = os.Getenv("JWT_SECRET_KEY")
 
 	if SecretKey == "" {
-		log.Println("Secret key is not set, generating one...")
-		SecretKey = util.GenerateRandomString(32)
-		log.Println("Secret key is:", SecretKey)
+		panic("JWT secret key is not set")
+		// log.Println("Secret key is not set, generating one...")
+		// SecretKey = util.GenerateRandomString(32)
+		// log.Println("Secret key is:", SecretKey)
 	}
 }
 
@@ -77,10 +77,20 @@ func Login(c *fiber.Ctx) error {
 		return nil
 	}
 
-	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		Issuer: strconv.Itoa(int(user.Id)),
+	UploadSecret = os.Getenv("UPLOAD_SECRET")
+	if UploadSecret == "" {
+		panic("Upload secret is not set")
+	}
+
+	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iss": strconv.Itoa(int(user.Id)),
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"data": fiber.Map{
+			"uploadSecret": UploadSecret,
+		},
+		// iss: strconv.Itoa(int(user.Id)),
 		// exprires in 24 hours
-		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+		// ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	token, err := claims.SignedString([]byte(SecretKey))
