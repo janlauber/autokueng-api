@@ -82,6 +82,12 @@ func Login(c *fiber.Ctx) error {
 		panic("Upload secret is not set")
 	}
 
+	SecretKey = os.Getenv("JWT_SECRET_KEY")
+
+	if SecretKey == "" {
+		panic("JWT secret key is not set")
+	}
+
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iss": strconv.Itoa(int(user.Id)),
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
