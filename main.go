@@ -7,22 +7,31 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/janlauber/autokueng-api/controllers"
 	"github.com/janlauber/autokueng-api/database"
 	"github.com/janlauber/autokueng-api/models"
 	"github.com/janlauber/autokueng-api/routes"
+	"github.com/janlauber/autokueng-api/util"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
+var (
+	username string
+	password string
+	host     string
+	dbName   string
+)
+
+func init() {
+	util.InitLoggers()
+	initEnvs()
+	initDB()
+}
+
 func initDB() {
-	// Initialize DB
-
+	// Initialize DD
 	var err error
-
-	username := os.Getenv("DB_USERNAME")
-	password := os.Getenv("DB_PASSWORD")
-	host := os.Getenv("DB_HOST")
-	dbName := os.Getenv("DB_NAME")
 
 	// build connection string
 	dbUri := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", host, username, password, dbName)
@@ -36,12 +45,41 @@ func initDB() {
 	database.DBConn.Debug().AutoMigrate(&models.User{})
 	database.DBConn.Debug().AutoMigrate(&models.News{})
 
-	log.Printf("Successfully connected to database %s\n", dbName)
+	util.InfoLogger.Println("Database connection initialized to: " + dbName)
+}
+
+func initEnvs() {
+	controllers.SecretKey = os.Getenv("JWT_SECRET_KEY")
+	if controllers.SecretKey == "" {
+		util.ErrorLogger.Println("JWT_SECRET_KEY is not set")
+		panic("stopping application...")
+	}
+
+	username = os.Getenv("DB_USERNAME")
+	if username == "" {
+		util.ErrorLogger.Println("DB_USERNAME is not set")
+		panic("stopping application...")
+	}
+	// could be empty
+	password = os.Getenv("DB_PASSWORD")
+	if password == "" {
+		util.WarningLogger.Println("DB_PASSWORD is not set")
+	}
+
+	host = os.Getenv("DB_HOST")
+	if host == "" {
+		util.ErrorLogger.Println("DB_HOST is not set")
+		panic("stopping application...")
+	}
+	dbName = os.Getenv("DB_NAME")
+	if dbName == "" {
+		util.ErrorLogger.Println("DB_NAME is not set")
+		panic("stopping application...")
+	}
+
 }
 
 func main() {
-
-	initDB()
 
 	app := fiber.New()
 
@@ -50,7 +88,7 @@ func main() {
 	}))
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
+		return c.SendString("AutoKueng API")
 	})
 
 	routes.Setup(app)

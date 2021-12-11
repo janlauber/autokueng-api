@@ -21,7 +21,6 @@ export DB_HOST=localhost
 ```bash
 # must be the same as in autokueng data api
 export JWT_SECRET_KEY=<secret>
-export UPLOAD_SECRET=<secret>
 ```
 
 ## API Reference

@@ -6,10 +6,16 @@ import (
 )
 
 func Setup(app *fiber.App) {
-	app.Post("/api/v1/register", controllers.Register)
-	app.Post("/api/v1/login", controllers.Login)
-	app.Get("/api/v1/user", controllers.User)
-	app.Post("/api/v1/logout", controllers.Logout)
+
+	api := app.Group("/api")
+	v1 := api.Group("/v1")
+
+	// Users
+	v1.Post("/register", controllers.Register)
+	v1.Post("/login", controllers.Login)
+	v1.Post("/logout", controllers.Logout)
+	auth := v1.Group("/auth", controllers.CookieAuthRequired())
+	auth.Get("/user", controllers.User)
 
 	app.Get("/api/v1/news", controllers.GetNews)
 	app.Put("/api/v1/news", controllers.CreateNews)

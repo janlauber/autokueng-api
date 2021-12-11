@@ -1,30 +1,18 @@
 package controllers
 
 import (
-	"os"
-	"strconv"
+	"fmt"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/janlauber/autokueng-api/database"
 	"github.com/janlauber/autokueng-api/models"
+	"github.com/janlauber/autokueng-api/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var SecretKey string
-var UploadSecret string
-
-func SetSecretKey(c *fiber.Ctx) {
-	SecretKey = os.Getenv("JWT_SECRET_KEY")
-
-	if SecretKey == "" {
-		panic("JWT secret key is not set")
-		// log.Println("Secret key is not set, generating one...")
-		// SecretKey = util.GenerateRandomString(32)
-		// log.Println("Secret key is:", SecretKey)
-	}
-}
 
 func Register(c *fiber.Ctx) error {
 	var data map[string]string
@@ -51,6 +39,7 @@ func Register(c *fiber.Ctx) error {
 }
 
 func Login(c *fiber.Ctx) error {
+
 	var data map[string]string
 
 	if err := c.BodyParser(&data); err != nil {
@@ -77,29 +66,15 @@ func Login(c *fiber.Ctx) error {
 		return nil
 	}
 
-	UploadSecret = os.Getenv("UPLOAD_SECRET")
-	if UploadSecret == "" {
-		panic("Upload secret is not set")
+	claims := jwt.MapClaims{
+		"id":   user.Id,
+		"name": user.Username,
+		"exp":  time.Now().Add(time.Hour * 24).Unix(),
 	}
 
-	SecretKey = os.Getenv("JWT_SECRET_KEY")
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	if SecretKey == "" {
-		panic("JWT secret key is not set")
-	}
-
-	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iss": strconv.Itoa(int(user.Id)),
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
-		"data": fiber.Map{
-			"uploadSecret": UploadSecret,
-		},
-		// iss: strconv.Itoa(int(user.Id)),
-		// exprires in 24 hours
-		// ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	token, err := claims.SignedString([]byte(SecretKey))
+	tokenString, err := token.SignedString([]byte(SecretKey))
 
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -109,10 +84,9 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	cookie := fiber.Cookie{
-		Name:     "jwt",
-		Value:    token,
-		Expires:  time.Now().Add(time.Hour * 24),
-		HTTPOnly: true,
+		Name:   "jwt-autokueng-api",
+		Value:  tokenString,
+		MaxAge: 86400,
 	}
 
 	c.Cookie(&cookie)
@@ -121,30 +95,62 @@ func Login(c *fiber.Ctx) error {
 		"message": "User logged in successfully",
 	})
 
+	// claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	// 	"iss": strconv.Itoa(int(user.Id)),
+	// 	"exp": time.Now().Add(time.Hour * 24).Unix(),
+	// })
+
+	// token, err := claims.SignedString([]byte(SecretKey))
+
+	// if err != nil {
+	// 	c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+	// 		"error": err.Error(),
+	// 	})
+	// 	return err
+	// }
+
+	// cookie := fiber.Cookie{
+	// 	Name:     "jwt",
+	// 	Value:    token,
+	// 	Expires:  time.Now().Add(time.Hour * 24),
+	// 	HTTPOnly: true,
+	// }
+
+	// c.Cookie(&cookie)
+
+	// return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	// 	"message": "User logged in successfully",
+	// })
+
 }
 
 func User(c *fiber.Ctx) error {
-	cookie := c.Cookies("jwt")
+	util.InfoLogger.Println("User")
 
-	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(SecretKey), nil
+	return c.JSON(fiber.Map{
+		"message": "User endpoint",
 	})
 
-	if err != nil {
-		c.Status(fiber.StatusUnauthorized)
-		return c.JSON(fiber.Map{
-			"message": "unauthorized",
-		})
-	}
+	// cookie := c.Cookies("jwt")
 
-	claims := token.Claims.(*jwt.StandardClaims)
+	// token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+	// 	return []byte(SecretKey), nil
+	// })
 
-	var user models.User
+	// if err != nil {
+	// 	c.Status(fiber.StatusUnauthorized)
+	// 	return c.JSON(fiber.Map{
+	// 		"message": "unauthorized",
+	// 	})
+	// }
 
-	database.DBConn.Where("id = ?", claims.Issuer).First(&user)
+	// claims := token.Claims.(*jwt.StandardClaims)
 
-	return c.JSON(user)
+	// var user models.User
 
+	// database.DBConn.Where("id = ?", claims.Issuer).First(&user)
+
+	// return c.JSON(user)
 }
 
 func Logout(c *fiber.Ctx) error {
@@ -160,4 +166,40 @@ func Logout(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "User logged out successfully",
 	})
+}
+
+func CookieAuthRequired() func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		cookie := c.Cookies("jwt-autokueng-api")
+
+		if cookie == "" {
+			c.Status(fiber.StatusUnauthorized)
+			return c.JSON(fiber.Map{
+				"message": "unauthorized",
+			})
+		}
+
+		// Parse the token and validate it
+		token, _ := jwt.Parse(cookie, func(token *jwt.Token) (interface{}, error) {
+			_, ok := token.Method.(*jwt.SigningMethodHMAC)
+			if !ok {
+				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			}
+			return []byte(SecretKey), nil
+		})
+
+		claims := token.Claims.(jwt.MapClaims)
+
+		var user models.User
+
+		database.DBConn.Where("id = ?", claims["id"]).First(&user)
+
+		if user.Id == 0 {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Unauthorized",
+			})
+		}
+
+		return nil
+	}
 }
