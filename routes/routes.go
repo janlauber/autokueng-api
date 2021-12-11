@@ -14,6 +14,7 @@ func Setup(app *fiber.App) {
 	v1.Post("/register", controllers.Register)
 	v1.Post("/login", controllers.Login)
 	v1.Post("/logout", controllers.Logout)
+	// TODO: if middleware CookieAuthRequired is nil then go to handler
 	auth := v1.Group("/auth", controllers.CookieAuthRequired())
 	auth.Get("/user", controllers.User)
 
