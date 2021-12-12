@@ -25,4 +25,12 @@ func Setup(app *fiber.App) {
 	v1.Put("/news", controllers.CreateNews)
 	v1.Post("/news", controllers.UpdateNews)
 	v1.Delete("/news", controllers.DeleteAllNews)
+
+	// Services
+	v1.Get("/services", controllers.GetServices)
+	v1.Get("/services/:id", controllers.GetService)
+	v1.Put("/services", controllers.CreateService)
+	v1.Post("/services/:id", controllers.UpdateService)
+	v1.Delete("/services/:id", controllers.DeleteService)
+
 }
