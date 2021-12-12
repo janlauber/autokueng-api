@@ -14,7 +14,14 @@ func GetNews(c *fiber.Ctx) error {
 }
 
 func CreateNews(c *fiber.Ctx) error {
-	//TODO: check if user is logged in
+
+	if err := CheckAuth(c); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	// create the news
 	db := database.DBConn
 	var count int64
 	db.Model(&models.News{}).Count(&count)
@@ -32,7 +39,13 @@ func CreateNews(c *fiber.Ctx) error {
 }
 
 func UpdateNews(c *fiber.Ctx) error {
-	//TODO: check if user is logged in
+
+	if err := CheckAuth(c); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
 	db := database.DBConn
 	news := new(models.News)
 	db.First(&news)
@@ -47,7 +60,13 @@ func UpdateNews(c *fiber.Ctx) error {
 }
 
 func DeleteAllNews(c *fiber.Ctx) error {
-	//TODO: check if user is logged in
+
+	if err := CheckAuth(c); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
 	db := database.DBConn
 	db.Delete(&models.News{})
 	return c.Status(200).JSON(fiber.Map{"message": "News deleted"})

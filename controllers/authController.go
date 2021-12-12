@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -8,33 +9,82 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/janlauber/autokueng-api/database"
 	"github.com/janlauber/autokueng-api/models"
+	"github.com/janlauber/autokueng-api/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var SecretKey string
+var UserAdmin bool
 
 func Register(c *fiber.Ctx) error {
-	var data map[string]string
 
-	if err := c.BodyParser(&data); err != nil {
-		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
+	if UserAdmin {
+		var data map[string]string
+
+		if err := c.BodyParser(&data); err != nil {
+			c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+			return err
+		}
+
+		password, _ := bcrypt.GenerateFromPassword([]byte(data["password"]), bcrypt.DefaultCost)
+
+		user := models.User{
+			Username: data["username"],
+			Password: string(password),
+		}
+
+		database.DBConn.Create(&user)
+
+		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+			"message": "User created successfully",
 		})
-		return err
+	} else {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "User registration is disabled",
+		})
 	}
+}
 
-	password, _ := bcrypt.GenerateFromPassword([]byte(data["password"]), bcrypt.DefaultCost)
+func ResetPassword(c *fiber.Ctx) error {
 
-	user := models.User{
-		Username: data["username"],
-		Password: string(password),
+	if UserAdmin {
+
+		var data map[string]string
+
+		if err := c.BodyParser(&data); err != nil {
+			c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+			return err
+		}
+
+		var user models.User
+
+		database.DBConn.Where("username = ?", data["username"]).First(&user)
+
+		if user.Id == 0 {
+			c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "User not found",
+			})
+			return errors.New("User not found")
+		}
+
+		password, _ := bcrypt.GenerateFromPassword([]byte(data["password"]), bcrypt.DefaultCost)
+
+		user.Password = string(password)
+
+		database.DBConn.Save(&user)
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "Password reset successfully",
+		})
+	} else {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "User password reset is disabled",
+		})
 	}
-
-	database.DBConn.Create(&user)
-
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "User created successfully",
-	})
 }
 
 func Login(c *fiber.Ctx) error {
@@ -98,14 +148,46 @@ func Login(c *fiber.Ctx) error {
 }
 
 func User(c *fiber.Ctx) error {
-	// TODO: outsource to middleware
+	if err := CheckAuth(c); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "authorized",
+	})
+}
+
+func Logout(c *fiber.Ctx) error {
+
+	if err := CheckAuth(c); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	cookie := fiber.Cookie{
+		Name:     "jwt",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		HTTPOnly: true,
+	}
+
+	c.Cookie(&cookie)
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "User logged out successfully",
+	})
+}
+
+func CheckAuth(c *fiber.Ctx) error {
+	// validate JWT token and authorize user
 	cookie := c.Cookies("jwt-autokueng-api")
 
 	if cookie == "" {
-		c.Status(fiber.StatusUnauthorized)
-		return c.JSON(fiber.Map{
-			"message": "unauthorized",
-		})
+		util.WarningLogger.Println("IP " + c.IP() + " tried to access without a invalid token")
+		return errors.New("no cookie")
 	}
 
 	// Parse the token and validate it
@@ -124,28 +206,9 @@ func User(c *fiber.Ctx) error {
 	database.DBConn.Where("id = ?", claims["id"]).First(&user)
 
 	if user.Id == 0 {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unauthorized",
-		})
+		util.WarningLogger.Println("IP " + c.IP() + " tried to access with an invalid user")
+		return errors.New("user not found")
 	}
 
-	return c.JSON(fiber.Map{
-		"id":   user.Id,
-		"name": user.Username,
-	})
-}
-
-func Logout(c *fiber.Ctx) error {
-	cookie := fiber.Cookie{
-		Name:     "jwt",
-		Value:    "",
-		Expires:  time.Now().Add(-time.Hour),
-		HTTPOnly: true,
-	}
-
-	c.Cookie(&cookie)
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "User logged out successfully",
-	})
+	return nil
 }

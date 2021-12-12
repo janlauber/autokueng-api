@@ -76,6 +76,9 @@ func initEnvs() {
 		util.ErrorLogger.Println("DB_NAME is not set")
 		panic("stopping application...")
 	}
+	if os.Getenv("USER_ADMIN") == "enabled" {
+		controllers.UserAdmin = true
+	}
 
 }
 
