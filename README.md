@@ -37,15 +37,23 @@ The authentication is done via JWT.
 
 | URL | Method | Data | Description |
 | ---- | ------ | ----------- | ----------- |
-| `/api/v1/login` | POST | `username`(string) `password`(string) | Login to the API |
+| `/api/v1/login` | POST | `username`(string), `password`(string) | Login to the API |
 | `/api/v1/logout` | POST | `jwt`(JWT) | Logout from the API |
-| `/api/v1/user` | GET | `username` `Id` | Checks if user is logged in and sends back username and userId, Is used to check if user is authenticated |
+| `/api/v1/user` | GET | `username`, `Id` | Checks if user is logged in and sends back username and userId, Is used to check if user is authenticated |
 
 ### User Administration
 The user administration is done via the `USER_ADMIN` env variable.
 
 | URL | Method | Data | Description |
 | ---- | ------ | ----------- | ----------- |
-| `/api/v1/admin/login` | POST | `username`(string) `password`(string) | Login to the API |
-| `/api/v1/admin/logout` | POST | `jwt`(JWT) | Logout from the API |
-| `/api/v1/admin/register` | POST | `username`(string) `password`(string) | Register a new user (disabled by default) |
+| `/api/v1/admin/register` | POST | `username`(string), `password`(string) | Register new Admin User |
+| `/api/v1/admin/reset-password` | POST | `username`(string), `password`(string) | Reset Passwort of given provided username |
+
+### News
+The news route is used to get and set the news article displayed on the front page.
+
+| URL | Method | Data | Description |
+| ---- | ------ | ----------- | ----------- |
+| `/api/v1/news` | GET | `title`, `content`, `picture` | Get news article |
+| `/api/v1/news` | POST | `title`, `content`, `picture` | Set news article |
+| `/api/v1/news` | DELETE | *nothing* | Delete all news articles |
