@@ -15,7 +15,6 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.0.2 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/gofiber/fiber/v2 v2.23.0 // indirect
 	github.com/gofiber/jwt v0.2.0
 	github.com/gofiber/jwt/v3 v3.2.2
