@@ -8,7 +8,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/janlauber/autokueng-api/database"
 	"github.com/janlauber/autokueng-api/models"
-	"github.com/janlauber/autokueng-api/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -92,65 +91,48 @@ func Login(c *fiber.Ctx) error {
 	c.Cookie(&cookie)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "User logged in successfully",
+		"id":       user.Id,
+		"username": user.Username,
 	})
-
-	// claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-	// 	"iss": strconv.Itoa(int(user.Id)),
-	// 	"exp": time.Now().Add(time.Hour * 24).Unix(),
-	// })
-
-	// token, err := claims.SignedString([]byte(SecretKey))
-
-	// if err != nil {
-	// 	c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-	// 		"error": err.Error(),
-	// 	})
-	// 	return err
-	// }
-
-	// cookie := fiber.Cookie{
-	// 	Name:     "jwt",
-	// 	Value:    token,
-	// 	Expires:  time.Now().Add(time.Hour * 24),
-	// 	HTTPOnly: true,
-	// }
-
-	// c.Cookie(&cookie)
-
-	// return c.Status(fiber.StatusOK).JSON(fiber.Map{
-	// 	"message": "User logged in successfully",
-	// })
 
 }
 
 func User(c *fiber.Ctx) error {
-	util.InfoLogger.Println("User")
+	// TODO: outsource to middleware
+	cookie := c.Cookies("jwt-autokueng-api")
 
-	return c.JSON(fiber.Map{
-		"message": "User endpoint",
+	if cookie == "" {
+		c.Status(fiber.StatusUnauthorized)
+		return c.JSON(fiber.Map{
+			"message": "unauthorized",
+		})
+	}
+
+	// Parse the token and validate it
+	token, _ := jwt.Parse(cookie, func(token *jwt.Token) (interface{}, error) {
+		_, ok := token.Method.(*jwt.SigningMethodHMAC)
+		if !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(SecretKey), nil
 	})
 
-	// cookie := c.Cookies("jwt")
+	claims := token.Claims.(jwt.MapClaims)
 
-	// token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-	// 	return []byte(SecretKey), nil
-	// })
+	var user models.User
 
-	// if err != nil {
-	// 	c.Status(fiber.StatusUnauthorized)
-	// 	return c.JSON(fiber.Map{
-	// 		"message": "unauthorized",
-	// 	})
-	// }
+	database.DBConn.Where("id = ?", claims["id"]).First(&user)
 
-	// claims := token.Claims.(*jwt.StandardClaims)
+	if user.Id == 0 {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
 
-	// var user models.User
-
-	// database.DBConn.Where("id = ?", claims.Issuer).First(&user)
-
-	// return c.JSON(user)
+	return c.JSON(fiber.Map{
+		"id":   user.Id,
+		"name": user.Username,
+	})
 }
 
 func Logout(c *fiber.Ctx) error {
@@ -166,40 +148,4 @@ func Logout(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "User logged out successfully",
 	})
-}
-
-func CookieAuthRequired() func(c *fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		cookie := c.Cookies("jwt-autokueng-api")
-
-		if cookie == "" {
-			c.Status(fiber.StatusUnauthorized)
-			return c.JSON(fiber.Map{
-				"message": "unauthorized",
-			})
-		}
-
-		// Parse the token and validate it
-		token, _ := jwt.Parse(cookie, func(token *jwt.Token) (interface{}, error) {
-			_, ok := token.Method.(*jwt.SigningMethodHMAC)
-			if !ok {
-				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-			}
-			return []byte(SecretKey), nil
-		})
-
-		claims := token.Claims.(jwt.MapClaims)
-
-		var user models.User
-
-		database.DBConn.Where("id = ?", claims["id"]).First(&user)
-
-		if user.Id == 0 {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Unauthorized",
-			})
-		}
-
-		return nil
-	}
 }

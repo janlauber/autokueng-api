@@ -15,11 +15,11 @@ func Setup(app *fiber.App) {
 	v1.Post("/login", controllers.Login)
 	v1.Post("/logout", controllers.Logout)
 	// TODO: if middleware CookieAuthRequired is nil then go to handler
-	auth := v1.Group("/auth", controllers.CookieAuthRequired())
-	auth.Get("/user", controllers.User)
+	v1.Get("/user", controllers.User)
 
-	app.Get("/api/v1/news", controllers.GetNews)
-	app.Put("/api/v1/news", controllers.CreateNews)
-	app.Post("/api/v1/news", controllers.UpdateNews)
-	app.Delete("/api/v1/news", controllers.DeleteAllNews)
+	// News
+	v1.Get("/news", controllers.GetNews)
+	v1.Put("/news", controllers.CreateNews)
+	v1.Post("/news", controllers.UpdateNews)
+	v1.Delete("/news", controllers.DeleteAllNews)
 }
