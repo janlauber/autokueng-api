@@ -194,7 +194,7 @@ func CheckAuth(c *fiber.Ctx) error {
 	token, _ := jwt.Parse(cookie, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(SecretKey), nil
 	})
