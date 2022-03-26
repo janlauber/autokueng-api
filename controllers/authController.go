@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,7 +28,27 @@ func Register(c *fiber.Ctx) error {
 			return err
 		}
 
-		password, _ := bcrypt.GenerateFromPassword([]byte(data["password"]), bcrypt.DefaultCost)
+		if len(data["username"]) == 0 {
+			c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Username is required",
+			})
+			return nil
+		}
+
+		if len(data["password"]) == 0 {
+			c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Password is required",
+			})
+			return nil
+		}
+
+		password, err := bcrypt.GenerateFromPassword([]byte(data["password"]), bcrypt.DefaultCost)
+		if err != nil {
+			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+			return err
+		}
 
 		user := models.User{
 			Username: data["username"],
@@ -102,7 +122,7 @@ func Login(c *fiber.Ctx) error {
 	database.DBConn.Where("username = ?", data["username"]).First(&user)
 
 	if user.Id == 0 {
-		c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "User not found",
 		})
 		return nil
@@ -132,74 +152,84 @@ func Login(c *fiber.Ctx) error {
 		return err
 	}
 
-	cookie := fiber.Cookie{
-		Name:   "jwt-autokueng-api",
-		Value:  tokenString,
-		MaxAge: 86400,
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"id":       user.Id,
+		"username": user.Username,
+		"token":    tokenString,
+	})
+
+}
+
+func Auth(c *fiber.Ctx) error {
+	uid, err := CheckAuth(c)
+	if err != nil {
+		util.ErrorLogger.Println(err)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "unauthorized",
+		})
 	}
 
-	c.Cookie(&cookie)
+	var user models.User
+
+	database.DBConn.Where("id = ?", uid).First(&user)
+	if user.Id == 0 {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "internal server error",
+		})
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"id":       user.Id,
 		"username": user.Username,
 	})
-
 }
 
-func User(c *fiber.Ctx) error {
-	if err := CheckAuth(c); err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unauthorized",
-		})
+func CheckAuth(c *fiber.Ctx) (int64, error) {
+	// validate JWT token from Baerer authorization header
+	var token *jwt.Token
+	var tokenString string
+	var err error
+
+	bearerToken := c.Get("Authorization")
+
+	bearerTokenSplit := strings.Split(bearerToken, " ")
+	if len(bearerTokenSplit) != 2 {
+		return 0, errors.New("Invalid bearer token")
+	} else {
+		tokenString = bearerTokenSplit[1]
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "authorized",
-	})
-}
-
-func Logout(c *fiber.Ctx) error {
-
-	if err := CheckAuth(c); err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unauthorized",
-		})
+	if len(tokenString) == 0 {
+		return 0, errors.New("Invalid bearer token")
 	}
 
-	cookie := fiber.Cookie{
-		Name:     "jwt",
-		Value:    "",
-		Expires:  time.Now().Add(-time.Hour),
-		HTTPOnly: true,
-	}
-
-	c.Cookie(&cookie)
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "User logged out successfully",
-	})
-}
-
-func CheckAuth(c *fiber.Ctx) error {
-	// validate JWT token and authorize user
-	cookie := c.Cookies("jwt-autokueng-api")
-
-	if cookie == "" {
-		util.WarningLogger.Println("IP " + c.IP() + " tried to access without a invalid token")
-		return errors.New("no cookie")
-	}
-
-	// Parse the token and validate it
-	token, _ := jwt.Parse(cookie, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-		if !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	token, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("Invalid token")
 		}
 		return []byte(SecretKey), nil
 	})
 
+	if err != nil {
+		return 0, errors.New("Invalid token")
+	}
+
+	if token == nil || !token.Valid {
+		return 0, errors.New("Invalid token")
+	}
+
 	claims := token.Claims.(jwt.MapClaims)
+
+	if claims["exp"] == nil {
+		return 0, nil
+	} else {
+		exp := claims["exp"]
+		// convert exp to int64
+		expInt64 := int64(exp.(float64))
+		if expInt64 < time.Now().Unix() {
+			return 0, nil
+		}
+	}
 
 	var user models.User
 
@@ -207,8 +237,8 @@ func CheckAuth(c *fiber.Ctx) error {
 
 	if user.Id == 0 {
 		util.WarningLogger.Println("IP " + c.IP() + " tried to access with an invalid user")
-		return errors.New("user not found")
+		return 0, errors.New("user not found")
 	}
 
-	return nil
+	return user.Id, nil
 }
