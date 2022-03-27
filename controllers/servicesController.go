@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"sort"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/janlauber/autokueng-api/database"
 	"github.com/janlauber/autokueng-api/models"
@@ -13,6 +15,11 @@ func GetServices(c *fiber.Ctx) error {
 	if db.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": db.Error})
 	}
+
+	// sort services by id
+	sort.Slice(services, func(i, j int) bool {
+		return services[i].ID < services[j].ID
+	})
 	return c.Status(200).JSON(services)
 }
 
