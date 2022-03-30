@@ -32,4 +32,18 @@ func Setup(app *fiber.App) {
 	v1.Put("/services/:id", controllers.UpdateService)
 	v1.Delete("/services/:id", controllers.DeleteService)
 
+	// Members
+	v1.Get("/members", controllers.GetMembers)
+	v1.Get("/members/:id", controllers.GetMember)
+	v1.Post("/members", controllers.CreateMember)
+	v1.Put("/members/:id", controllers.UpdateMember)
+	v1.Delete("/members/:id", controllers.DeleteMember)
+
+	// GalleryImages
+	v1.Get("/gallery-images", controllers.GetGalleryImages)
+	v1.Get("/gallery-images/:id", controllers.GetGalleryImage)
+	v1.Post("/gallery-images", controllers.CreateGalleryImage)
+	v1.Put("/gallery-images/:id", controllers.UpdateGalleryImage)
+	v1.Delete("/gallery-images/:id", controllers.DeleteGalleryImage)
+
 }

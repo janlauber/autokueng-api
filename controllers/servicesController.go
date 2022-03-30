@@ -30,6 +30,9 @@ func GetService(c *fiber.Ctx) error {
 	db := database.DBConn
 	var service models.Service
 	db.First(&service, id)
+	if db.Error != nil {
+		return c.Status(500).JSON(fiber.Map{"error": db.Error})
+	}
 	if service.ID == 0 {
 		return c.Status(404).JSON(fiber.Map{"error": "Service not found"})
 	}
