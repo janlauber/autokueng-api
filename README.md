@@ -38,8 +38,7 @@ The authentication is done via JWT.
 | URL | Method | Data | Description |
 | ---- | ------ | ----------- | ----------- |
 | `/api/v1/login` | POST | `username`(string), `password`(string) | Login to the API |
-| `/api/v1/logout` | POST | `jwt`(JWT) | Logout from the API |
-| `/api/v1/user` | GET | `username`, `Id` | Checks if user is logged in and sends back username and userId, Is used to check if user is authenticated |
+| `/api/v1/auth` | GET | `username`, `Id` | Checks if user is logged in and sends back username and userId, Is used to check if user is authenticated |
 
 ### User Administration
 The user administration is done via the `USER_ADMIN` env variable.

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,10 +16,11 @@ import (
 )
 
 var (
-	username string
-	password string
-	host     string
-	dbName   string
+	username   string
+	password   string
+	host       string
+	dbName     string
+	corsString string
 )
 
 func init() {
@@ -44,6 +44,9 @@ func initDB() {
 
 	database.DBConn.Debug().AutoMigrate(&models.User{})
 	database.DBConn.Debug().AutoMigrate(&models.News{})
+	database.DBConn.Debug().AutoMigrate(&models.Service{})
+	database.DBConn.Debug().AutoMigrate(&models.Member{})
+	database.DBConn.Debug().AutoMigrate(&models.GalleryImage{})
 
 	util.InfoLogger.Println("Database connection initialized to: " + dbName)
 }
@@ -51,10 +54,17 @@ func initDB() {
 func initEnvs() {
 	controllers.SecretKey = os.Getenv("JWT_SECRET_KEY")
 	if controllers.SecretKey == "" {
-		util.ErrorLogger.Println("JWT_SECRET_KEY is not set")
-		panic("stopping application...")
+		util.WarningLogger.Println("JWT_SECRET_KEY is not set")
+		controllers.SecretKey = util.GenerateRandomString(32)
+		util.InfoLogger.Println("JWT_SECRET_KEY is set to default: " + controllers.SecretKey)
 	}
 
+	corsString = os.Getenv("CORS_ALLOWED_ORIGINS")
+	if corsString == "" {
+		util.WarningLogger.Println("CORS_ALLOWED_ORIGINS is not set")
+		corsString = "*"
+		util.InfoLogger.Println("CORS_ALLOWED_ORIGINS is set to default: " + corsString)
+	}
 	username = os.Getenv("DB_USERNAME")
 	if username == "" {
 		util.ErrorLogger.Println("DB_USERNAME is not set")
@@ -77,6 +87,7 @@ func initEnvs() {
 		panic("stopping application...")
 	}
 	if os.Getenv("USER_ADMIN") == "enabled" {
+		util.InfoLogger.Println("User administration is enabled")
 		controllers.UserAdmin = true
 	}
 
@@ -88,6 +99,7 @@ func main() {
 
 	app.Use(cors.New(cors.Config{
 		AllowCredentials: true,
+		AllowOrigins:     corsString,
 	}))
 
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -97,8 +109,6 @@ func main() {
 	routes.Setup(app)
 
 	app.Listen(":8000")
-
-	log.Printf("Server started on port 8000")
 
 	defer database.DBConn.Close()
 }

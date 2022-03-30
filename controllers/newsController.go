@@ -15,7 +15,7 @@ func GetNews(c *fiber.Ctx) error {
 
 func CreateNews(c *fiber.Ctx) error {
 
-	if err := CheckAuth(c); err != nil {
+	if _, err := CheckAuth(c); err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Unauthorized",
 		})
@@ -40,7 +40,7 @@ func CreateNews(c *fiber.Ctx) error {
 
 func UpdateNews(c *fiber.Ctx) error {
 
-	if err := CheckAuth(c); err != nil {
+	if _, err := CheckAuth(c); err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Unauthorized",
 		})
@@ -61,7 +61,7 @@ func UpdateNews(c *fiber.Ctx) error {
 
 func DeleteAllNews(c *fiber.Ctx) error {
 
-	if err := CheckAuth(c); err != nil {
+	if _, err := CheckAuth(c); err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Unauthorized",
 		})
