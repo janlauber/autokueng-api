@@ -46,4 +46,10 @@ func Setup(app *fiber.App) {
 	v1.Put("/gallery-images/:id", controllers.UpdateGalleryImage)
 	v1.Delete("/gallery-images/:id", controllers.DeleteGalleryImage)
 
+	// Links
+	v1.Get("/links", controllers.GetLinks)
+	v1.Get("/links/:id", controllers.GetLink)
+	v1.Post("/links", controllers.CreateLink)
+	v1.Put("/links/:id", controllers.UpdateLink)
+	v1.Delete("/links/:id", controllers.DeleteLink)
 }
