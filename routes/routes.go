@@ -52,4 +52,11 @@ func Setup(app *fiber.App) {
 	v1.Post("/links", controllers.CreateLink)
 	v1.Put("/links/:id", controllers.UpdateLink)
 	v1.Delete("/links/:id", controllers.DeleteLink)
+
+	// Tags
+	v1.Get("/tags", controllers.GetTags)
+	v1.Get("/tags/:id", controllers.GetTag)
+	v1.Post("/tags", controllers.CreateTag)
+	v1.Put("/tags/:id", controllers.UpdateTag)
+	v1.Delete("/tags/:id", controllers.DeleteTag)
 }

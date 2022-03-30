@@ -8,38 +8,38 @@ import (
 	"github.com/janlauber/autokueng-api/models"
 )
 
-func GetLinks(c *fiber.Ctx) error {
+func GetTags(c *fiber.Ctx) error {
 	db := database.DBConn
-	var links []models.Link
-	db.Find(&links)
+	var tags []models.Tag
+	db.Find(&tags)
 	if db.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": db.Error})
 	}
 
-	// sort links by id
-	sort.Slice(links, func(i, j int) bool {
-		return links[i].ID < links[j].ID
+	// sort tags by id
+	sort.Slice(tags, func(i, j int) bool {
+		return tags[i].ID < tags[j].ID
 	})
-	return c.Status(200).JSON(links)
+	return c.Status(200).JSON(tags)
 }
 
-func GetLink(c *fiber.Ctx) error {
+func GetTag(c *fiber.Ctx) error {
 	// get the id from the url
 	id := c.Params("id")
 
 	db := database.DBConn
-	var link models.Link
-	db.First(&link, id)
+	var tag models.Tag
+	db.First(&tag, id)
 	if db.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": db.Error})
 	}
-	if link.ID == 0 {
-		return c.Status(404).JSON(fiber.Map{"error": "Link not found"})
+	if tag.ID == 0 {
+		return c.Status(404).JSON(fiber.Map{"error": "Tag not found"})
 	}
-	return c.Status(200).JSON(link)
+	return c.Status(200).JSON(tag)
 }
 
-func CreateLink(c *fiber.Ctx) error {
+func CreateTag(c *fiber.Ctx) error {
 	if _, err := CheckAuth(c); err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Unauthorized",
@@ -48,21 +48,21 @@ func CreateLink(c *fiber.Ctx) error {
 
 	db := database.DBConn
 
-	// parse body to link model
-	var link models.Link
-	if err := c.BodyParser(&link); err != nil {
+	// parse body to tag model
+	var tag models.Tag
+	if err := c.BodyParser(&tag); err != nil {
 		return c.Status(400).JSON(err)
 	}
 
-	// create the link
-	db.Create(&link)
+	// create the tag
+	db.Create(&tag)
 	if db.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": db.Error})
 	}
-	return c.Status(201).JSON(link)
+	return c.Status(201).JSON(tag)
 }
 
-func UpdateLink(c *fiber.Ctx) error {
+func UpdateTag(c *fiber.Ctx) error {
 	if _, err := CheckAuth(c); err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Unauthorized",
@@ -71,29 +71,28 @@ func UpdateLink(c *fiber.Ctx) error {
 	id := c.Params("id")
 	db := database.DBConn
 
-	// parse body to link model
-	var link models.Link
-	if err := c.BodyParser(&link); err != nil {
+	// parse body to tag model
+	var tag models.Tag
+	if err := c.BodyParser(&tag); err != nil {
 		return c.Status(400).JSON(err)
 	}
 
-	// check if link exists
+	// check if tag exists
 	var count int64
-	db.Model(&models.Link{}).Where("id = ?", id).Count(&count)
+	db.Model(&models.Tag{}).Where("id = ?", id).Count(&count)
 	if count == 0 {
 		return c.Status(404).JSON(fiber.Map{"error": "Link not found"})
 	}
 
-	// update the link
-	db.First(&link, id).Save(&link)
-
+	// update the tag
+	db.First(&tag, id).Save(&tag)
 	if db.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": db.Error})
 	}
-	return c.Status(200).JSON(link)
+	return c.Status(200).JSON(tag)
 }
 
-func DeleteLink(c *fiber.Ctx) error {
+func DeleteTag(c *fiber.Ctx) error {
 	if _, err := CheckAuth(c); err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Unauthorized",
@@ -103,15 +102,15 @@ func DeleteLink(c *fiber.Ctx) error {
 	id := c.Params("id")
 	db := database.DBConn
 
-	// check if link exists
+	// check if tag exists
 	var count int64
-	db.Model(&models.Link{}).Where("id = ?", id).Count(&count)
+	db.Model(&models.Tag{}).Where("id = ?", id).Count(&count)
 	if count == 0 {
-		return c.Status(404).JSON(fiber.Map{"error": "Link not found"})
+		return c.Status(404).JSON(fiber.Map{"error": "Tag not found"})
 	}
 
-	// delete the link
-	db.Where("id = ?", id).Delete(&models.Link{})
+	// delete the tag
+	db.Where("id = ?", id).Delete(&models.Tag{})
 	if db.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": db.Error})
 	}

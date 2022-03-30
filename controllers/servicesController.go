@@ -85,10 +85,17 @@ func UpdateService(c *fiber.Ctx) error {
 	}
 
 	// update the service
-	db.First(&service, id).Update(c.BodyParser(&service)).Save(&service)
+	db.Model(&models.Service{}).Where("id = ?", id).Updates(service)
 	if db.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": db.Error})
 	}
+
+	// find the updated service
+	db.First(&service, id)
+	if db.Error != nil {
+		return c.Status(500).JSON(fiber.Map{"error": db.Error})
+	}
+
 	return c.Status(200).JSON(service)
 }
 

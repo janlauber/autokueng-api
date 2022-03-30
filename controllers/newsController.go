@@ -55,7 +55,7 @@ func UpdateNews(c *fiber.Ctx) error {
 	if err := c.BodyParser(news); err != nil {
 		return c.Status(400).JSON(err)
 	}
-	db.First(&news).Update(c.BodyParser(news)).Save(&news)
+	db.Save(&news)
 	return c.Status(200).JSON(news)
 }
 
