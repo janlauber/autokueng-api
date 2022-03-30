@@ -47,6 +47,7 @@ func initDB() {
 	database.DBConn.Debug().AutoMigrate(&models.Service{})
 	database.DBConn.Debug().AutoMigrate(&models.Member{})
 	database.DBConn.Debug().AutoMigrate(&models.GalleryImage{})
+	database.DBConn.Debug().AutoMigrate(&models.Link{})
 
 	util.InfoLogger.Println("Database connection initialized to: " + dbName)
 }
