@@ -8,5 +8,4 @@ type Link struct {
 	Description string `json:"description"`
 	URL         string `json:"url"`
 	Image       string `json:"image"`
-	Tag         *Tag   `gorm:"foreignKey:ID" json:"tag_id"`
 }
