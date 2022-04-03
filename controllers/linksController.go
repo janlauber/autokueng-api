@@ -9,6 +9,7 @@ import (
 )
 
 func GetLinks(c *fiber.Ctx) error {
+
 	db := database.DBConn
 	var links []models.Link
 	db.Find(&links)
@@ -20,6 +21,7 @@ func GetLinks(c *fiber.Ctx) error {
 	sort.Slice(links, func(i, j int) bool {
 		return links[i].ID < links[j].ID
 	})
+
 	return c.Status(200).JSON(links)
 }
 
@@ -51,7 +53,7 @@ func CreateLink(c *fiber.Ctx) error {
 	// parse body to link model
 	var link models.Link
 	if err := c.BodyParser(&link); err != nil {
-		return c.Status(400).JSON(err)
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	// create the link
@@ -59,6 +61,7 @@ func CreateLink(c *fiber.Ctx) error {
 	if db.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": db.Error})
 	}
+
 	return c.Status(201).JSON(link)
 }
 
@@ -85,7 +88,8 @@ func UpdateLink(c *fiber.Ctx) error {
 	}
 
 	// update the link
-	db.First(&link, id).Update(c.BodyParser(&link)).Save(&link)
+	db.First(&link, id).Save(&link)
+
 	if db.Error != nil {
 		return c.Status(500).JSON(fiber.Map{"error": db.Error})
 	}

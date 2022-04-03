@@ -1,9 +1,11 @@
 package models
 
-import "github.com/jinzhu/gorm"
+import "gorm.io/gorm"
 
 type Link struct {
 	gorm.Model
-	URL   string `json:"url"`
-	Image string `json:"image"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	URL         string `json:"url"`
+	Image       string `json:"image"`
 }

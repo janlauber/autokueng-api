@@ -11,8 +11,9 @@ import (
 	"github.com/janlauber/autokueng-api/models"
 	"github.com/janlauber/autokueng-api/routes"
 	"github.com/janlauber/autokueng-api/util"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"gorm.io/driver/postgres"
+	_ "gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var (
@@ -37,7 +38,7 @@ func initDB() {
 	dbUri := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", host, username, password, dbName)
 
 	// connect to database
-	database.DBConn, err = gorm.Open("postgres", dbUri)
+	database.DBConn, err = gorm.Open(postgres.Open(dbUri), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
@@ -110,6 +111,4 @@ func main() {
 	routes.Setup(app)
 
 	app.Listen(":8000")
-
-	defer database.DBConn.Close()
 }
