@@ -27,6 +27,10 @@ if you want to reset the password of a user or register a new one, set the follo
 ```bash
 export USER_ADMIN=enabled
 ```
+*recaptcha secret*
+```bash
+export CAPTCHA_SECRET=<secret>
+```
 
 ## API Reference
 The Autokueng API is organized around REST. 

@@ -92,6 +92,11 @@ func initEnvs() {
 		util.InfoLogger.Println("User administration is enabled")
 		controllers.UserAdmin = true
 	}
+	controllers.CaptchaSecret = os.Getenv("CAPTCHA_SECRET")
+	if controllers.CaptchaSecret == "" {
+		util.ErrorLogger.Println("CAPTCHA_SECRET is not set")
+		panic("stopping application...")
+	}
 
 }
 

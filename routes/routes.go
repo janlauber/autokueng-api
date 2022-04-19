@@ -52,4 +52,7 @@ func Setup(app *fiber.App) {
 	v1.Post("/links", controllers.CreateLink)
 	v1.Put("/links/:id", controllers.UpdateLink)
 	v1.Delete("/links/:id", controllers.DeleteLink)
+
+	// Contact form
+	v1.Post("/contact", controllers.SendContactform)
 }
