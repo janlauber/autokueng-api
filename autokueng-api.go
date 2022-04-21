@@ -53,6 +53,41 @@ func initDB() {
 	util.InfoLogger.Println("Database connection initialized to: " + dbName)
 }
 
+func initSMTP() error {
+	// get OS environment variables for SMTP
+	controllers.SMTP_Host = os.Getenv("SMTP_HOST")
+	if controllers.SMTP_Host == "" {
+		return fmt.Errorf("SMTP_HOST not set")
+	}
+	controllers.SMTP_Port = os.Getenv("SMTP_PORT")
+	if controllers.SMTP_Port == "" {
+		return fmt.Errorf("SMTP_PORT not set")
+	}
+	controllers.SMTP_Username = os.Getenv("SMTP_USERNAME")
+	if controllers.SMTP_Username == "" {
+		return fmt.Errorf("SMTP_USERNAME not set")
+	}
+	controllers.SMTP_Password = os.Getenv("SMTP_PASSWORD")
+	if controllers.SMTP_Password == "" {
+		return fmt.Errorf("SMTP_PASSWORD not set")
+	}
+	controllers.SMTP_From = os.Getenv("SMTP_FROM")
+	if controllers.SMTP_From == "" {
+		return fmt.Errorf("SMTP_FROM not set")
+	}
+	controllers.SMTP_To = os.Getenv("SMTP_TO")
+	if controllers.SMTP_To == "" {
+		return fmt.Errorf("SMTP_TO not set")
+	}
+	// SMTP_SSL to bool
+	if os.Getenv("SMTP_SSL") == "true" {
+		controllers.SMTP_SSL = true
+	} else {
+		controllers.SMTP_SSL = false
+	}
+	return nil
+}
+
 func initEnvs() {
 	controllers.SecretKey = os.Getenv("JWT_SECRET_KEY")
 	if controllers.SecretKey == "" {
@@ -92,7 +127,15 @@ func initEnvs() {
 		util.InfoLogger.Println("User administration is enabled")
 		controllers.UserAdmin = true
 	}
-
+	controllers.CaptchaSecret = os.Getenv("CAPTCHA_SECRET")
+	if controllers.CaptchaSecret == "" {
+		util.ErrorLogger.Println("CAPTCHA_SECRET is not set")
+		panic("stopping application...")
+	}
+	if err := initSMTP(); err != nil {
+		util.ErrorLogger.Println(err)
+		panic("stopping application...")
+	}
 }
 
 func main() {
