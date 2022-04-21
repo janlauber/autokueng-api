@@ -31,6 +31,16 @@ export USER_ADMIN=enabled
 ```bash
 export CAPTCHA_SECRET=<secret>
 ```
+*smtp*
+```bash
+export SMTP_HOST=smtp.gmail.com
+export SMTP_Port=465
+export SMTP_Username=test@gmail.com
+export SMTP_Password=thispassword
+export SMTP_From=kontakttest@gmail.com
+export SMTP_To=infotest@gmail.com
+export SMTP_SSL=true
+```
 
 ## API Reference
 The Autokueng API is organized around REST. 
