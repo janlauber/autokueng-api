@@ -70,3 +70,15 @@ The news route is used to get and set the news article displayed on the front pa
 | `/api/v1/news` | GET | `title`, `content`, `picture` | Get news article |
 | `/api/v1/news` | POST | `title`, `content`, `picture` | Set news article |
 | `/api/v1/news` | DELETE | *nothing* | Delete all news articles |
+
+### Services
+*tbd.*
+
+### Firma
+*tbd.*
+
+### Links
+*tbd.*
+
+### Kontakt
+*tbd.*
