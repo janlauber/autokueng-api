@@ -52,10 +52,10 @@ func SendContactform(c *fiber.Ctx) error {
 	}
 
 	// Send email
-	from := mail.Address{Name: reqbody.Firstname + " " + reqbody.Lastname, Address: reqbody.Email}
+	from := mail.Address{Name: "(Kontaktformular) " + reqbody.Firstname + " " + reqbody.Lastname, Address: reqbody.Email}
 	to := mail.Address{Name: "", Address: SMTP_To}
 	subject := reqbody.Subject
-	body := reqbody.Message
+	body := fmt.Sprintf("Vorname: %s\nNachname: %s\nE-Mail: %s\nTelefon: %s\n\nNachricht: \n%s", reqbody.Firstname, reqbody.Lastname, reqbody.Email, reqbody.Phone, reqbody.Message)
 
 	headers := make(map[string]string)
 	headers["From"] = from.String()
