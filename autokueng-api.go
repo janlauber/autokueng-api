@@ -136,6 +136,11 @@ func initEnvs() {
 		util.ErrorLogger.Println(err)
 		panic("stopping application...")
 	}
+	util.DataURL = os.Getenv("DATA_URL")
+	if util.DataURL == "" {
+		util.ErrorLogger.Println("DATA_URL is not set, setting to default")
+		util.DataURL = "https://data.autokueng.ch"
+	}
 }
 
 func main() {
@@ -150,6 +155,8 @@ func main() {
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("AutoKueng API")
 	})
+
+	go util.GarbageCollect()
 
 	routes.Setup(app)
 
